@@ -1,0 +1,271 @@
+### =============================================================
+### Testes manuais da API — abra no VS Code com a extensão REST Client
+### e clique em "Send Request" acima de cada requisição.
+### Rode a API antes: dotnet run (na pasta Atelie.Api)
+### =============================================================
+
+@api = http://localhost:5000/api
+
+### 1) Login como Administrador (o token fica guardado em "admin")
+# @name admin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@atelie.com", "senha": "admin123" }
+
+### 2) Login como Visualizador (somente consulta)
+# @name visualizador
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "visualizador@atelie.com", "senha": "visualizador123" }
+
+@tokenAdmin = {{admin.response.body.token}}
+@tokenVis = {{visualizador.response.body.token}}
+
+### ---------------- CLIENTES ----------------
+
+### Criar cliente
+POST {{api}}/clientes
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Paula Ribeiro",
+  "telefone": "(31) 98888-7777",
+  "email": "ana@email.com",
+  "cpf": "123.456.789-09",
+  "endereco": "Rua da Bahia, 1200",
+  "observacoes": ""
+}
+
+### Listar clientes (com busca)
+GET {{api}}/clientes?busca=ana
+Authorization: Bearer {{tokenAdmin}}
+
+### Alterar cliente (gera log do telefone)
+PUT {{api}}/clientes/1
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Paula Ribeiro",
+  "telefone": "(31) 97777-1111",
+  "email": "ana@email.com",
+  "cpf": "123.456.789-09",
+  "endereco": "Rua da Bahia, 1200",
+  "observacoes": "Prefere retirar no sábado"
+}
+
+### Inativar cliente
+PATCH {{api}}/clientes/1/status
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "ativo": false }
+
+### Reativar cliente
+PATCH {{api}}/clientes/1/status
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "ativo": true }
+
+### Histórico do cliente 1
+GET {{api}}/logs?entidade=Cliente&entidadeId=1
+Authorization: Bearer {{tokenAdmin}}
+
+### Visualizador pode consultar clientes
+GET {{api}}/clientes
+Authorization: Bearer {{tokenVis}}
+
+### Visualizador tentando cadastrar cliente -> 403
+POST {{api}}/clientes
+Authorization: Bearer {{tokenVis}}
+Content-Type: application/json
+
+{ "nome": "Teste", "telefone": "31999999999" }
+
+### Clientes para escolher no pedido (Administrador)
+GET {{api}}/clientes/opcoes
+Authorization: Bearer {{tokenAdmin}}
+
+### ---------------- SERVIÇOS ----------------
+
+### Listar serviços
+GET {{api}}/servicos
+Authorization: Bearer {{tokenAdmin}}
+
+### Criar serviço
+POST {{api}}/servicos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "nome": "Reforma de blazer", "descricao": "Ajuste de ombro e manga", "preco": 120.00, "complexidade": 40 }
+
+### Serviços para montar pedido (Administrador)
+GET {{api}}/servicos/opcoes
+Authorization: Bearer {{tokenAdmin}}
+
+### ---------------- FUNCIONÁRIOS ----------------
+
+### Listar funcionários
+GET {{api}}/funcionarios
+Authorization: Bearer {{tokenAdmin}}
+
+### Criar funcionário
+POST {{api}}/funcionarios
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "nome": "João Costureiro", "email": "joao@atelie.com", "perfil": "Visualizador", "senha": "joao123" }
+
+### ---------------- PEDIDOS ----------------
+
+### Simular data de entrega (não salva)
+POST {{api}}/pedidos/simular-entrega
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "pecas": [
+    { "descricao": "Calça jeans", "quantidade": 2, "servicos": [ { "servicoId": 1 }, { "servicoId": 2 } ] }
+  ]
+}
+
+### Criar pedido (Administrador)
+# @name pedido
+POST {{api}}/pedidos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "clienteId": 1,
+  "observacoes": "Cliente pediu urgência",
+  "pecas": [
+    {
+      "descricao": "Calça jeans azul",
+      "quantidade": 1,
+      "servicos": [
+        { "servicoId": 1, "observacao": "subir 3 cm" },
+        { "servicoId": 2 }
+      ]
+    },
+    {
+      "descricao": "Saia preta",
+      "quantidade": 2,
+      "servicos": [ { "servicoId": 3 } ]
+    }
+  ]
+}
+
+### Pedido grande demais (> 100 de complexidade) -> 400 pedindo para dividir
+POST {{api}}/pedidos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "clienteId": 1, "pecas": [ { "descricao": "Vestido", "quantidade": 2, "servicos": [ { "servicoId": 6 } ] } ] }
+
+### Mesmo serviço duas vezes na mesma peça -> 400
+POST {{api}}/pedidos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "clienteId": 1, "pecas": [ { "descricao": "Calça", "quantidade": 1, "servicos": [ { "servicoId": 1 }, { "servicoId": 1 } ] } ] }
+
+### Listar pedidos em aberto (Visualizador pode)
+GET {{api}}/pedidos
+Authorization: Bearer {{tokenVis}}
+
+### Ver pedido
+GET {{api}}/pedidos/{{pedido.response.body.id}}
+Authorization: Bearer {{tokenVis}}
+
+### Alterar pedido (só enquanto Pendente)
+PUT {{api}}/pedidos/{{pedido.response.body.id}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "clienteId": 1,
+  "observacoes": "Cliente pediu urgência",
+  "pecas": [
+    {
+      "descricao": "Calça jeans azul",
+      "quantidade": 1,
+      "servicos": [ { "servicoId": 1, "observacao": "subir 3 cm" }, { "servicoId": 2 }, { "servicoId": 3 } ]
+    }
+  ]
+}
+
+### Visualizador tentando mudar status -> 403
+PATCH {{api}}/pedidos/{{pedido.response.body.id}}/status
+Authorization: Bearer {{tokenVis}}
+Content-Type: application/json
+
+{ "status": "Cancelado" }
+
+### Mudar status: Pendente -> EmProducao -> Pronto -> Entregue (ou Cancelado)
+PATCH {{api}}/pedidos/{{pedido.response.body.id}}/status
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "status": "EmProducao" }
+
+### Ocupação dos próximos dias (para o dashboard)
+GET {{api}}/pedidos/ocupacao
+Authorization: Bearer {{tokenVis}}
+
+### Histórico do pedido (somente Administrador)
+GET {{api}}/logs?entidade=Pedido&entidadeId={{pedido.response.body.id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### ---------------- FINANCEIRO (somente Administrador) ----------------
+
+### Pedidos que ainda têm saldo a receber
+GET {{api}}/recebimentos/pedidos-a-receber
+Authorization: Bearer {{tokenAdmin}}
+
+### Registrar recebimento (pode ser parcial, ex.: sinal)
+# @name recebimento
+POST {{api}}/recebimentos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "pedidoId": {{pedido.response.body.id}}, "data": "2026-10-26", "valor": 50.00, "formaPagamento": "Pix", "observacao": "sinal" }
+
+### Recebimentos do mês atual (ou ?de=2026-10-01&ate=2026-10-31&forma=Pix)
+GET {{api}}/recebimentos
+Authorization: Bearer {{tokenAdmin}}
+
+### Estornar recebimento
+DELETE {{api}}/recebimentos/{{recebimento.response.body.id}}
+Authorization: Bearer {{tokenAdmin}}
+
+### Registrar pagamento (saída). Categorias: Materiais, Aluguel, Contas, Salarios, Impostos, Manutencao, Outros
+# @name pagamento
+POST {{api}}/pagamentos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "descricao": "Linhas e zíperes", "categoria": "Materiais", "data": "2026-10-26", "valor": 89.90, "formaPagamento": "Pix" }
+
+### Pagamentos do mês atual (ou ?de=&ate=&categoria=)
+GET {{api}}/pagamentos
+Authorization: Bearer {{tokenAdmin}}
+
+### Fluxo de caixa do mês atual (ou ?de=2026-10-01&ate=2026-10-31)
+GET {{api}}/fluxo-caixa
+Authorization: Bearer {{tokenAdmin}}
+
+### Visualizador tentando ver o financeiro -> 403
+GET {{api}}/fluxo-caixa
+Authorization: Bearer {{tokenVis}}
+
+### Indicadores do Início (padrão: mês atual e os 2 anteriores; ou ?de=2026-08-01&ate=2026-10-31)
+GET {{api}}/indicadores
+Authorization: Bearer {{tokenAdmin}}
+
+### Visualizador: só P1, P2 e P4 (campos financeiros null)
+GET {{api}}/indicadores
+Authorization: Bearer {{tokenVis}}
