@@ -1,0 +1,36 @@
+# Build do .NET
+bin/
+obj/
+[Pp]ublish/
+*.nupkg
+TestResults/
+
+# Banco SQLite local (cada pessoa gera o seu ao rodar a API)
+*.db
+*.db-shm
+*.db-wal
+
+# Configurações locais com segredos
+# O appsettings.json continua versionado; coloque a chave JWT real e outras senhas
+# em appsettings.*.local.json ou nos User Secrets do .NET (dotnet user-secrets).
+appsettings.*.local.json
+.env
+.env.*
+
+# Logs
+/logs/
+*.log
+
+# Visual Studio / Rider / VS Code
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
