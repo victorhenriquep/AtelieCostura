@@ -15,6 +15,10 @@ public static class AtualizacaoBanco
 {
     public static async Task AplicarAsync(AppDbContext db, ILogger logger)
     {
+        // Estes passos só servem para um atelie.db antigo (SQLite).
+        // No PostgreSQL o banco nasce novo pelo EnsureCreated, já com todas as tabelas.
+        if (!db.Database.IsSqlite()) return;
+
         if (await TabelaExiste(db, "PedidoItens"))
         {
             logger.LogInformation("Convertendo os itens de pedido para a estrutura de peças...");

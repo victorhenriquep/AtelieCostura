@@ -1,0 +1,16 @@
+# Imagem da API do Ateliê para rodar na Vercel (Container Runtime).
+# Na Vercel, crie um projeto com Root Directory = backend.
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY Atelie.Api/Atelie.Api.csproj Atelie.Api/
+RUN dotnet restore Atelie.Api/Atelie.Api.csproj
+COPY Atelie.Api/ Atelie.Api/
+RUN dotnet publish Atelie.Api/Atelie.Api.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY --from=build /app .
+ENV ASPNETCORE_ENVIRONMENT=Production
+# A Vercel informa a porta na variável PORT; a API precisa escutar nela.
+CMD ["sh", "-c", "ASPNETCORE_URLS=http://0.0.0.0:${PORT:-8080} exec dotnet Atelie.Api.dll"]

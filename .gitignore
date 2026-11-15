@@ -1,0 +1,4 @@
+# Segredos locais (ex.: connection string do Neon gravada pelo `neon deploy`)
+.env
+.env.local
+.env.*.local

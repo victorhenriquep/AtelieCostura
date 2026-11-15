@@ -38,7 +38,7 @@ public static class ListarFuncionarios
 
             var termo = Texto.Limpar(busca);
             if (termo.Length > 0)
-                query = query.Where(f => EF.Functions.Like(f.Nome, $"%{termo}%") || EF.Functions.Like(f.Email, $"%{termo}%"));
+                query = query.Where(f => EF.Functions.Like(f.Nome.ToLower(), $"%{termo.ToLower()}%") || EF.Functions.Like(f.Email.ToLower(), $"%{termo.ToLower()}%"));
 
             return query.OrderBy(f => f.Nome).Select(FuncionarioDto.Projecao).ToListAsync(ct);
         }

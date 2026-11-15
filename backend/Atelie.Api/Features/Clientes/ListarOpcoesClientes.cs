@@ -23,7 +23,7 @@ public static class ListarOpcoesClientes
 
             var termo = Texto.Limpar(busca);
             if (termo.Length > 0)
-                query = query.Where(c => EF.Functions.Like(c.Nome, $"%{termo}%"));
+                query = query.Where(c => EF.Functions.Like(c.Nome.ToLower(), $"%{termo.ToLower()}%"));
 
             return await query
                 .OrderBy(c => c.Nome)

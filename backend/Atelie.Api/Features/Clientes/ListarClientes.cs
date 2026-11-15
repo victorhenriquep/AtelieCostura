@@ -29,8 +29,8 @@ public static class ListarClientes
                 var digitos = Texto.SoDigitos(termo);
                 // LIKE no SQLite não diferencia maiúsculas/minúsculas (para letras sem acento).
                 query = query.Where(c =>
-                    EF.Functions.Like(c.Nome, $"%{termo}%") ||
-                    EF.Functions.Like(c.Email, $"%{termo}%") ||
+                    EF.Functions.Like(c.Nome.ToLower(), $"%{termo.ToLower()}%") ||
+                    EF.Functions.Like(c.Email.ToLower(), $"%{termo.ToLower()}%") ||
                     (digitos.Length > 0 && (c.Telefone.Contains(digitos) || c.Cpf.Contains(digitos))));
             }
 

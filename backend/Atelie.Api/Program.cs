@@ -16,10 +16,22 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // ---------------------------------------------------------------
-// Banco de dados (SQLite: arquivo atelie.db na pasta do projeto)
+// Banco de dados
+// - Local: SQLite (arquivo atelie.db na pasta do projeto)
+// - Vercel: PostgreSQL (Neon/Supabase), lido da variável DATABASE_URL
+//   ou de ConnectionStrings__Atelie. O provider é escolhido pela própria string.
 // ---------------------------------------------------------------
-builder.Services.AddDbContext<AppDbContext>(opcoes =>
-    opcoes.UseSqlite(config.GetConnectionString("Atelie") ?? "Data Source=atelie.db"));
+var conexao = ConexaoBanco.Obter(config);
+if (ConexaoBanco.EhPostgres(conexao))
+{
+    // Mantém o DateTime como "timestamp" simples, igual ao comportamento que o projeto já tinha no SQLite.
+    AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    builder.Services.AddDbContext<AppDbContext>(opcoes => opcoes.UseNpgsql(ConexaoBanco.ParaNpgsql(conexao)));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(opcoes => opcoes.UseSqlite(conexao));
+}
 
 // ---------------------------------------------------------------
 // Serviços da aplicação
@@ -78,7 +90,11 @@ builder.Services.AddAuthorizationBuilder()
 // ---------------------------------------------------------------
 // CORS: libera o front (Vite em http://localhost:5173) para chamar a API
 // ---------------------------------------------------------------
-var origens = config.GetSection("Cors:Origens").Get<string[]>() ?? new[] { "http://localhost:5173" };
+// Na Vercel, defina a variável CORS_ORIGENS com o endereço do front (vários separados por vírgula).
+var origens = (Environment.GetEnvironmentVariable("CORS_ORIGENS") is { Length: > 0 } origensEnv
+        ? origensEnv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        : config.GetSection("Cors:Origens").Get<string[]>())
+    ?? new[] { "http://localhost:5173" };
 builder.Services.AddCors(opcoes =>
     opcoes.AddPolicy("Front", p => p.WithOrigins(origens).AllowAnyHeader().AllowAnyMethod()));
 

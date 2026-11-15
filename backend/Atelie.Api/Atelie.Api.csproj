@@ -12,6 +12,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.*" />
     <!-- Entity Framework Core com SQLite -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.*" />
+    <!-- PostgreSQL, usado quando a API roda na Vercel (Neon/Supabase) -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.*" />
   </ItemGroup>
 
 </Project>

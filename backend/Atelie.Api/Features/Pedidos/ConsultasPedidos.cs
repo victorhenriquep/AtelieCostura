@@ -35,7 +35,7 @@ public static class ListarPedidos
 
             var termo = Texto.Limpar(consulta.Busca);
             if (termo.Length > 0)
-                query = query.Where(p => EF.Functions.Like(p.Cliente.Nome, $"%{termo}%"));
+                query = query.Where(p => EF.Functions.Like(p.Cliente.Nome.ToLower(), $"%{termo.ToLower()}%"));
 
             var pedidos = await query
                 .OrderBy(p => p.DataEntrega)

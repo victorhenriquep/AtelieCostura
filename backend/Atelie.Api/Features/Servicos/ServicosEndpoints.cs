@@ -37,7 +37,7 @@ public static class ListarServicos
 
             var termo = Texto.Limpar(busca);
             if (termo.Length > 0)
-                query = query.Where(s => EF.Functions.Like(s.Nome, $"%{termo}%") || EF.Functions.Like(s.Descricao, $"%{termo}%"));
+                query = query.Where(s => EF.Functions.Like(s.Nome.ToLower(), $"%{termo.ToLower()}%") || EF.Functions.Like(s.Descricao.ToLower(), $"%{termo.ToLower()}%"));
 
             return query.OrderBy(s => s.Nome).Select(ServicoDto.Projecao).ToListAsync(ct);
         }
