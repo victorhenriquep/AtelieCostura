@@ -1,31 +1,33 @@
 # Deploy na Vercel (plano Hobby, grátis)
 
-São dois projetos na Vercel apontando para o mesmo repositório, mais um banco Postgres grátis.
+Front e API sobem juntos, num único projeto da Vercel (Vercel Services),
+configurado pelo `vercel.json` da raiz:
+
+- `/api/...` vai para o backend (container .NET, `backend/Dockerfile.vercel`)
+- todo o resto vai para o front (Vite, `frontend/`)
+
+Como ficam no mesmo domínio, não precisa configurar CORS nem a URL da API:
+o front chama `/api` (veja `frontend/src/api/http.ts`).
 
 ## 1. Banco (Neon)
-1. Crie uma conta em neon.tech e um projeto (região São Paulo, se houver).
-2. Copie a connection string (`postgresql://usuario:senha@host/banco?sslmode=require`).
+Copie a connection string do projeto no Neon (botão **Connect**).
+A API cria as tabelas e os usuários iniciais sozinha no primeiro acesso.
 
-A API cria as tabelas e os usuários iniciais sozinha no primeiro acesso (EnsureCreated + DbSeeder).
-
-## 2. Backend
-1. Vercel → Add New → Project → importe o repositório.
-2. **Root Directory:** `backend`. A Vercel detecta o `Dockerfile.vercel` e usa o preset Container.
-3. Variáveis de ambiente:
+## 2. Projeto na Vercel
+1. Add New → Project → importe o repositório (ou rode `vercel` na raiz do projeto).
+2. **Root Directory:** a raiz do repositório (não escolha `frontend` nem `backend`).
+3. **Framework Preset:** `Services`.
+4. Variáveis de ambiente:
    | Nome | Valor |
    | --- | --- |
    | `DATABASE_URL` | connection string do Neon |
    | `Jwt__Chave` | uma frase secreta com 32+ caracteres |
-   | `CORS_ORIGENS` | URL do front, ex.: `https://atelie-front.vercel.app` |
-4. Deploy. Teste abrindo a URL do backend: deve aparecer "API do Ateliê rodando".
+5. Deploy.
 
-## 3. Frontend
-1. No projeto do front (Root Directory `frontend`), em Settings → Environment Variables:
-   | Nome | Valor |
-   | --- | --- |
-   | `VITE_API_URL` | URL do backend + `/api`, ex.: `https://atelie-api.vercel.app/api` |
-   | `VITE_USE_MOCK` | `false` |
-2. Faça um **Redeploy** (variáveis `VITE_` entram no build, não valem sem redeploy).
+## Testando
+- `https://SEU-PROJETO.vercel.app/` abre o sistema.
+- Login: `admin@atelie.com` / `admin123`.
 
 ## Rodando localmente
-Nada muda: sem `DATABASE_URL`, a API continua usando o SQLite (`atelie.db`).
+Nada muda: sem `DATABASE_URL`, a API usa o SQLite (`atelie.db`) e o front
+usa o `.env.development` (`http://localhost:5000/api`).
